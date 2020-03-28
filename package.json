@@ -1,0 +1,28 @@
+{
+  "name": "namecodes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nturley/namecodes.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nturley/namecodes/issues"
+  },
+  "homepage": "https://github.com/nturley/namecodes#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "ts-node": "^8.8.1",
+    "typescript": "^3.8.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.3",
+    "@types/node": "^13.9.5"
+  }
+}
