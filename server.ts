@@ -3,11 +3,16 @@ import Ajv from 'ajv';
 import fs from 'fs';
 import { v4 as uuid } from 'uuid';
 import { User, Card, CardType, GameState } from './src/models'
+import socketIO from 'socket.io';
 
-let ajv = new Ajv();
 const PORT = process.env.PORT || 5000;
+
 const app = express();
+const http = require('http').createServer(app);
+const io = socketIO(http);
+
 app.use(express.json());
+let ajv = new Ajv();
 let schema = JSON.parse(fs.readFileSync('user.schema.json').toString());
 let validate = ajv.compile(schema);
 
@@ -19,6 +24,10 @@ function status(res: express.Response, code: number) {
 }
 
 app.use(express.static('dist'))
+
+io.on('connection', (socket) =>{
+    console.log('a user connected');
+});
 
 // read all users
 app.get('/users', (req, res) => {

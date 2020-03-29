@@ -1,6 +1,7 @@
 import { User, Team, GameState } from './models';
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import io from "socket.io";
 import { Button, ButtonGroup, Card, Radio, RadioGroup, Divider, Tag } from "@blueprintjs/core";
 import { v4 as uuid } from 'uuid';
 import Cookies from 'js-cookie';
@@ -10,11 +11,15 @@ interface AppState extends GameState{
     name: string;
 }
 
+
+type ClickEvent = React.MouseEvent<Element, MouseEvent>;
+
 class App extends React.Component<{}, AppState> {
     uid: string;
 
     constructor(props: {}) {
         super(props);
+        io();
         let myUuid = Cookies.get('uid')
         if (!myUuid) {
             myUuid = uuid()
@@ -70,7 +75,7 @@ class App extends React.Component<{}, AppState> {
             });
     }
 
-    onUpdateNameClick(_: React.MouseEvent) {
+    onUpdateNameClick(_: ClickEvent) {
         this.updateUser();
     }
 
@@ -91,7 +96,9 @@ class App extends React.Component<{}, AppState> {
                         <label>Name</label><br />
                         <ButtonGroup>
                             <input type="text" onChange={e => this.onNameChange(e)} value={this.state.name} />
-                            <Button onClick={(e: React.MouseEvent<Element, MouseEvent>) => this.onUpdateNameClick(e)}> Update Name</Button>
+                            <Button onClick={(e: ClickEvent) => this.onUpdateNameClick(e)}>
+                                Set Name
+                            </Button>
                         </ButtonGroup>
                         <Divider />
                         <RadioGroup onChange={e => this.onTeamChange(e)} selectedValue={this.state.team}>
