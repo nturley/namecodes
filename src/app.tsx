@@ -1,4 +1,4 @@
-import { User, Team, GameState } from './models';
+import { User, Team, GameState, SocketEvents } from './models';
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import io from "socket.io";
@@ -19,13 +19,15 @@ class App extends React.Component<{}, AppState> {
 
     constructor(props: {}) {
         super(props);
-        io();
+        let socket = io();
+        socket.on(SocketEvents.GameState, (gs:GameState) => this.updateGameState(gs));
         let myUuid = Cookies.get('uid')
         if (!myUuid) {
             myUuid = uuid()
         }
         Cookies.set('uid', myUuid, { expires: 14 })
         this.uid = myUuid;
+        socket.emit(SocketEvents.NewUser, this.uid);
         this.state = {
             team: Team.BLUE,
             name: 'Anonymous',
@@ -34,18 +36,13 @@ class App extends React.Component<{}, AppState> {
         };
     }
 
+    updateGameState(gs:GameState) {
+        this.receiveUsers(gs.users);
+    }
+
     receiveUsers(users:User[]) {
         console.log(users);
         this.setState({users});
-    }
-
-    getUsers() {
-        fetch('/users')
-        .then((response) => response.json())
-        .then((users) => this.receiveUsers(users))
-        .catch((err) => {
-            console.log(err);
-        })
     }
 
     get me(): User {
@@ -120,7 +117,6 @@ class App extends React.Component<{}, AppState> {
                                 .filter((u:User) => u.team ===Team.BLUE)
                                 .map((u:User, i) => <Tag className="nameTag" key={u.uid}> { u.name } </Tag>)
                         }
-                        <Button onClick={() => this.getUsers()}>Get Users</Button>
                     </Card>
                 </div>
                 <div id="table">

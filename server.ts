@@ -2,13 +2,18 @@ import express from "express";
 import Ajv from 'ajv';
 import fs from 'fs';
 import { v4 as uuid } from 'uuid';
-import { User, Card, CardType, GameState } from './src/models'
+import { User, Card, CardType, GameState, SocketEvents } from './src/models'
 import socketIO from 'socket.io';
 
 const PORT = process.env.PORT || 5000;
 
 const app = express();
 
+interface SocketLookup {
+    [key:string]:socketIO.Socket
+}
+
+const socketsByUid: SocketLookup = {}
 
 app.use(express.json());
 let ajv = new Ajv();
@@ -24,7 +29,24 @@ function status(res: express.Response, code: number) {
 
 app.use(express.static('dist'))
 
+const server = app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));
+const io = socketIO(server);
 
+io.on('connection', (socket) => {
+    socket.emit(SocketEvents.GameState, gameState);
+    socket.on(SocketEvents.NewUser, msg => {
+        socketsByUid[msg] = socket;
+    });
+    socket.on('disconnect', () => {
+        Object.entries(socketsByUid).forEach(entry => {
+            if (entry[1] === socket) {
+                delete socketsByUid[entry[0]];
+                gameState.users = gameState.users.filter(u =>u.uid !== entry[0])
+                io.emit(SocketEvents.GameState, gameState);
+            }
+        });
+    });
+});
 
 // read all users
 app.get('/users', (req, res) => {
@@ -66,7 +88,7 @@ app.delete('/cards/', (req, res) => {
     }
 });
 
-// create or update user
+// update user
 app.put('/users', (req, res) => {
     let user: User = req.body;
     // check that user conforms to the user schema
@@ -78,13 +100,10 @@ app.put('/users', (req, res) => {
             gameState.users.push(user);
         }
         status(res, 200);
+        io.emit(SocketEvents.GameState, gameState)
     } else {
         status(res, 400);
     }
 });
 
-const server = app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));
-const io = socketIO(server);
-io.on('connection', (socket) =>{
-    console.log('a user connected');
-});
+

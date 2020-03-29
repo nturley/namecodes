@@ -3,6 +3,11 @@ export enum Team {
     BLUE = 'blue'
 }
 
+export enum SocketEvents {
+    GameState = 'gameState',
+    NewUser = 'newUser'
+}
+
 export interface User {
     uid: string;
     name: string;
