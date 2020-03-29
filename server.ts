@@ -21,9 +21,9 @@ function status(res: express.Response, code: number) {
 app.use(express.static('dist'))
 
 // read all users
-app.get('/users/', (req, res) => {
+app.get('/users', (req, res) => {
     // we use uid like an auth token, so filter it out
-    res.send(gameState.users.map((u:User) => ({...u, uid:''})));
+    res.send(gameState.users.map((u:User, i:number) => ({...u, uid:i})));
 });
 
 // read all cards
@@ -63,9 +63,9 @@ app.delete('/cards/', (req, res) => {
 // create or update user
 app.put('/users', (req, res) => {
     let user: User = req.body;
-    let existingUserIndex = gameState.users.findIndex((u:User) => u.uid == req.params.user_id)
     // check that user conforms to the user schema
     if (validate(user)) {
+        let existingUserIndex = gameState.users.findIndex((u:User) => u.uid == user.uid)
         if (existingUserIndex != -1) {
             gameState.users[existingUserIndex] = user;
         } else {

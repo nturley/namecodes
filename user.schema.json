@@ -2,9 +2,8 @@
 	"$schema": "http://json-schema.org/draft-07/schema#",
     "type":"object",
     "properties": {
-      "name": {
-        "type":"string"
-      },
+      "uid": {"type":"string"},
+      "name": {"type":"string"},
       "team": {"type":"string"},
       "secretKeeper": {"type":"boolean"}
     },
