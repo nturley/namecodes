@@ -8,8 +8,7 @@ import socketIO from 'socket.io';
 const PORT = process.env.PORT || 5000;
 
 const app = express();
-const http = require('http').createServer(app);
-const io = socketIO(http);
+
 
 app.use(express.json());
 let ajv = new Ajv();
@@ -25,9 +24,7 @@ function status(res: express.Response, code: number) {
 
 app.use(express.static('dist'))
 
-io.on('connection', (socket) =>{
-    console.log('a user connected');
-});
+
 
 // read all users
 app.get('/users', (req, res) => {
@@ -86,4 +83,8 @@ app.put('/users', (req, res) => {
     }
 });
 
-app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));
+const server = app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));
+const io = socketIO(server);
+io.on('connection', (socket) =>{
+    console.log('a user connected');
+});
