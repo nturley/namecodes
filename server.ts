@@ -4,7 +4,9 @@ import fs from 'fs';
 import { v4 as uuid } from 'uuid';
 import { User, Card, CardType, GameState, SocketEvents } from './src/models'
 import socketIO from 'socket.io';
-var randomWords = require('random-english-words');
+const randomWords = require('random-english-words');
+import _ from 'lodash';
+
 
 const PORT = process.env.PORT || 5000;
 
@@ -58,17 +60,22 @@ class NameCodeServer {
 
     resetGame(socket: SocketIO.Socket) {
         this.gameState.cards = []
+        const cardTypes = [
+            CardType.BYSTANDER,
+            CardType.ASSASIN,
+            CardType.RED,
+            CardType.BLUE
+        ]
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 5; col++) {
                 this.gameState.cards.push({
                     uid: uuid(),
                     word: randomWords(),
-                    type: CardType.BYSTANDER,
-                    isRevealed: false
+                    type: _.sample(cardTypes) || CardType.BYSTANDER,
+                    isRevealed: false,
                 });
             }
         }
-        console.log('game reset')
         this.sendGameState()
     }
 
