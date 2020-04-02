@@ -4,106 +4,88 @@ import fs from 'fs';
 import { v4 as uuid } from 'uuid';
 import { User, Card, CardType, GameState, SocketEvents } from './src/models'
 import socketIO from 'socket.io';
+var randomWords = require('random-english-words');
 
 const PORT = process.env.PORT || 5000;
 
-const app = express();
+class NameCodeServer {
+    app: express.Express;
+    validateUser: Ajv.ValidateFunction;
+    io: SocketIO.Server;
+    gameState: GameState = {users:[], cards:[]};
 
-interface SocketLookup {
-    [key:string]:socketIO.Socket
-}
+    constructor() {
+        this.app = express();
+        this.app.use(express.json());
+        this.app.use(express.static('dist'))
+        const server = this.app.listen(
+            PORT,
+            () => console.log(`Example app listening on port ${PORT}!`)
+        );
+        this.io = socketIO(server);
+        this.io.on(SocketEvents.Connection, socket => this.socketConnect(socket));
 
-const socketsByUid: SocketLookup = {}
+        const ajv = new Ajv();
+        const schema = JSON.parse(fs.readFileSync('user.schema.json').toString());
+        this.validateUser = ajv.compile(schema);
+    }
 
-app.use(express.json());
-let ajv = new Ajv();
-let schema = JSON.parse(fs.readFileSync('user.schema.json').toString());
-let validate = ajv.compile(schema);
+    socketConnect(socket: SocketIO.Socket) {
+        // send newcomer the starting gamestate
+        socket.emit(SocketEvents.GameState, this.gameState);
+        // listen for user updates
+        socket.on(SocketEvents.UpdateUser, user => this.onUser(socket, user));
+        // remove user on disconnect
+        socket.on(SocketEvents.Disconnect, () => this.socketDisconnect(socket));
+        // reset game
+        socket.on(SocketEvents.ResetGame, () => this.resetGame(socket))
+        // reveal card
+        socket.on(SocketEvents.RevealCard, (card) => this.revealCard(socket, card));
+    }
 
-let gameState: GameState = {users:[], cards:[]}
+    revealCard(socket:SocketIO.Socket, card:Card) {
+        const foundCard = this.gameState.cards.find(c => c.uid === card.uid);
+        if (foundCard) {
+            foundCard.isRevealed = true;
+            this.io.emit(SocketEvents.GameState, this.gameState);
+        }
+    }
 
-function status(res: express.Response, code: number) {
-    res.status(code);
-    res.send(`<img src="https://http.cat/${ code }.jpg"/>`)
-}
-
-app.use(express.static('dist'))
-
-const server = app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));
-const io = socketIO(server);
-
-io.on('connection', (socket) => {
-    socket.emit(SocketEvents.GameState, gameState);
-    socket.on(SocketEvents.NewUser, msg => {
-        socketsByUid[msg] = socket;
-    });
-    socket.on('disconnect', () => {
-        Object.entries(socketsByUid).forEach(entry => {
-            if (entry[1] === socket) {
-                delete socketsByUid[entry[0]];
-                gameState.users = gameState.users.filter(u =>u.uid !== entry[0])
-                io.emit(SocketEvents.GameState, gameState);
+    resetGame(socket:SocketIO.Socket) {
+        this.gameState.cards = []
+        for (let row=0;row<5;row++) {
+            for (let col=0;col<5;col++) {
+                this.gameState.cards.push({
+                    uid:uuid(),
+                    word:randomWords(),
+                    type:CardType.BYSTANDER,
+                    isRevealed:false
+                });
             }
-        });
-    });
-});
-
-// read all users
-app.get('/users', (req, res) => {
-    // we use uid like an auth token, so filter it out
-    res.send(gameState.users.map((u:User, i:number) => ({...u, uid:i})));
-});
-
-// read all cards
-app.get('/cards/:user_id', (req, res) => {
-    let user = gameState.users.find((u:User) => u.uid == req.params.user_id)
-    if (user) {
-        if (user.secretKeeper) {
-            res.send(gameState.cards);
-        } else {
-            res.send(gameState.cards.map(c => c.isRevealed?c:{...c,type: CardType.UNKNOWN}));
         }
-    } else {
-        status(res, 404);
+        this.io.emit(SocketEvents.GameState, this.gameState);
     }
-});
 
-//update card to be revealed
-app.put('/cards/:card_id/reveal', (req, res) => {
-    let card = gameState.cards.find((c:Card) => c.uid == req.params.card_id);
-    if (!card) {
-        status(res, 404);
-        return
+    socketDisconnect(socket: SocketIO.Socket) {
+        // delete users associated with this socket
+        this.gameState.users = this.gameState.users.filter(u => u.socket != socket);
+        this.io.emit(SocketEvents.GameState, this.gameState);
     }
-    card.isRevealed = true;
-});
 
-// reset cards
-app.delete('/cards/', (req, res) => {
-    let user = gameState.users.find((u:User) => u.uid == req.params.user_id)
-    if (user) {
-        gameState.cards = [{uid:uuid(), word:'Yellow', type:CardType.ASSASIN, isRevealed:false}]
-    } else {
-        status(res, 404);
+    onUser(socket: SocketIO.Socket, user: User) {
+        if (this.validateUser(user)) {
+            user.socket = socket;
+            this.updateUser(user);
+        }
     }
-});
 
-// update user
-app.put('/users', (req, res) => {
-    let user: User = req.body;
-    // check that user conforms to the user schema
-    if (validate(user)) {
-        let existingUserIndex = gameState.users.findIndex((u:User) => u.uid == user.uid)
+    updateUser(user:User) {
+        let existingUserIndex = this.gameState.users.findIndex((u:User) => u.uid == user.uid)
         if (existingUserIndex != -1) {
-            gameState.users[existingUserIndex] = user;
+            this.gameState.users[existingUserIndex] = user;
         } else {
-            gameState.users.push(user);
+            this.gameState.users.push(user);
         }
-        status(res, 200);
-        io.emit(SocketEvents.GameState, gameState)
-    } else {
-        status(res, 400);
+        this.io.emit(SocketEvents.GameState, this.gameState)
     }
-});
-
-
+}

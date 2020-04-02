@@ -4,45 +4,40 @@ import * as ReactDOM from "react-dom";
 import io from "socket.io";
 import { Button, ButtonGroup, Card, Radio, RadioGroup, Divider, Tag } from "@blueprintjs/core";
 import { v4 as uuid } from 'uuid';
-import Cookies from 'js-cookie';
 
 interface AppState extends GameState{
     team: Team;
     name: string;
 }
 
+function groupByRows(cards: Card[], rows: number): Card[][] {
+    let ret = [];
+    while(cards.length) ret.push(cards.splice(0, rows));
+    return ret;
+}
 
 type ClickEvent = React.MouseEvent<Element, MouseEvent>;
 
 class App extends React.Component<{}, AppState> {
     uid: string;
+    socket: io.Server;
 
     constructor(props: {}) {
         super(props);
-        let socket = io();
-        socket.on(SocketEvents.GameState, (gs:GameState) => this.updateGameState(gs));
-        let myUuid = Cookies.get('uid')
-        if (!myUuid) {
-            myUuid = uuid()
-        }
-        Cookies.set('uid', myUuid, { expires: 14 })
-        this.uid = myUuid;
-        socket.emit(SocketEvents.NewUser, this.uid);
+        this.socket = io();
+        this.socket.on(SocketEvents.GameState, (gs:GameState) => this.updateGameState(gs));
+        this.uid = uuid();
         this.state = {
             team: Team.BLUE,
             name: 'Anonymous',
             users:[],
             cards:[]
         };
+        this.socket.emit(SocketEvents.UpdateUser, this.me);
     }
 
     updateGameState(gs:GameState) {
-        this.receiveUsers(gs.users);
-    }
-
-    receiveUsers(users:User[]) {
-        console.log(users);
-        this.setState({users});
+        this.setState(gs);
     }
 
     get me(): User {
@@ -56,20 +51,7 @@ class App extends React.Component<{}, AppState> {
 
     updateUser(update?: User) {
         let user: User = update ? update : this.me
-        fetch('/users', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(user),
-        })
-            .then((response) => response.text())
-            .then((data) => {
-                console.log('Success:', data);
-            })
-            .catch((err) => {
-                console.log(err);
-            });
+        this.socket.emit(SocketEvents.UpdateUser, user);
     }
 
     onUpdateNameClick(_: ClickEvent) {
@@ -120,6 +102,9 @@ class App extends React.Component<{}, AppState> {
                     </Card>
                 </div>
                 <div id="table">
+                    { groupByRows([...this.state.cards], 5).map(row => {
+
+                    })}
                     <div className="hFlex">
                         <Card className="cardCard">Hello</Card>
                         <Card className="cardCard">Hello</Card>

@@ -1,3 +1,5 @@
+import {Socket} from 'socket.io'
+
 export enum Team {
     RED = 'red',
     BLUE = 'blue'
@@ -5,7 +7,11 @@ export enum Team {
 
 export enum SocketEvents {
     GameState = 'gameState',
-    NewUser = 'newUser'
+    UpdateUser = 'updateUser',
+    Connection = 'connection',
+    Disconnect = 'disconnect',
+    ResetGame = 'reset',
+    RevealCard = 'reveal',
 }
 
 export interface User {
@@ -13,6 +19,7 @@ export interface User {
     name: string;
     team: Team;
     secretKeeper: boolean;
+    socket?:Socket
 }
 
 export enum CardType {
