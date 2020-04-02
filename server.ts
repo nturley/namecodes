@@ -12,7 +12,7 @@ class NameCodeServer {
     app: express.Express;
     validateUser: Ajv.ValidateFunction;
     io: SocketIO.Server;
-    gameState: GameState = {users:[], cards:[]};
+    gameState: GameState = { users: [], cards: [] };
 
     constructor() {
         this.app = express();
@@ -30,9 +30,14 @@ class NameCodeServer {
         this.validateUser = ajv.compile(schema);
     }
 
+    sendGameState() {
+        const gs = { ...this.gameState, users: this.gameState.users.map(u => ({ ...u, socket: null })) }
+        this.io.emit(SocketEvents.GameState, gs)
+    }
+
     socketConnect(socket: SocketIO.Socket) {
         // send newcomer the starting gamestate
-        socket.emit(SocketEvents.GameState, this.gameState);
+        this.sendGameState()
         // listen for user updates
         socket.on(SocketEvents.UpdateUser, user => this.onUser(socket, user));
         // remove user on disconnect
@@ -43,33 +48,34 @@ class NameCodeServer {
         socket.on(SocketEvents.RevealCard, (card) => this.revealCard(socket, card));
     }
 
-    revealCard(socket:SocketIO.Socket, card:Card) {
+    revealCard(socket: SocketIO.Socket, card: Card) {
         const foundCard = this.gameState.cards.find(c => c.uid === card.uid);
         if (foundCard) {
             foundCard.isRevealed = true;
-            this.io.emit(SocketEvents.GameState, this.gameState);
+            this.sendGameState()
         }
     }
 
-    resetGame(socket:SocketIO.Socket) {
+    resetGame(socket: SocketIO.Socket) {
         this.gameState.cards = []
-        for (let row=0;row<5;row++) {
-            for (let col=0;col<5;col++) {
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
                 this.gameState.cards.push({
-                    uid:uuid(),
-                    word:randomWords(),
-                    type:CardType.BYSTANDER,
-                    isRevealed:false
+                    uid: uuid(),
+                    word: randomWords(),
+                    type: CardType.BYSTANDER,
+                    isRevealed: false
                 });
             }
         }
-        this.io.emit(SocketEvents.GameState, this.gameState);
+        console.log('game reset')
+        this.sendGameState()
     }
 
     socketDisconnect(socket: SocketIO.Socket) {
         // delete users associated with this socket
         this.gameState.users = this.gameState.users.filter(u => u.socket != socket);
-        this.io.emit(SocketEvents.GameState, this.gameState);
+        this.sendGameState()
     }
 
     onUser(socket: SocketIO.Socket, user: User) {
@@ -79,13 +85,14 @@ class NameCodeServer {
         }
     }
 
-    updateUser(user:User) {
-        let existingUserIndex = this.gameState.users.findIndex((u:User) => u.uid == user.uid)
+    updateUser(user: User) {
+        let existingUserIndex = this.gameState.users.findIndex((u: User) => u.uid == user.uid)
         if (existingUserIndex != -1) {
             this.gameState.users[existingUserIndex] = user;
         } else {
             this.gameState.users.push(user);
         }
-        this.io.emit(SocketEvents.GameState, this.gameState)
+        this.sendGameState()
     }
 }
+const serve = new NameCodeServer()
