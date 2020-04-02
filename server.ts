@@ -2,7 +2,7 @@ import express from "express";
 import Ajv from 'ajv';
 import fs from 'fs';
 import { v4 as uuid } from 'uuid';
-import { User, Card, CardType, GameState, SocketEvents } from './src/models'
+import { User, Card, CardType, GameState, SocketEvents, PlayerRole } from './src/models'
 import socketIO from 'socket.io';
 const randomWords = require('random-english-words');
 import _ from 'lodash';
@@ -33,8 +33,14 @@ class NameCodeServer {
     }
 
     sendGameState() {
-        const gs = { ...this.gameState, users: this.gameState.users.map(u => ({ ...u, socket: null })) }
-        this.io.emit(SocketEvents.GameState, gs)
+        const guesserGS = {
+            cards: this.gameState.cards.map(c => ({...c, type:(c.isRevealed?c.type:CardType.UNKNOWN)})),
+            users: this.gameState.users.map(u => ({ ...u, socket: null })) }
+        this.io.to(PlayerRole.Guesser).emit(SocketEvents.GameState, guesserGS)
+        const clueGiverGS = {
+            cards: this.gameState.cards,
+            users: this.gameState.users.map(u => ({ ...u, socket: null })) }
+            this.io.to(PlayerRole.ClueGiver).emit(SocketEvents.GameState, clueGiverGS)
     }
 
     socketConnect(socket: SocketIO.Socket) {
@@ -88,6 +94,8 @@ class NameCodeServer {
     onUser(socket: SocketIO.Socket, user: User) {
         if (this.validateUser(user)) {
             user.socket = socket;
+            socket.leaveAll();
+            socket.join(user.role);
             this.updateUser(user);
         }
     }

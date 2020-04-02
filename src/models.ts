@@ -5,6 +5,11 @@ export enum Team {
     BLUE = 'blue'
 }
 
+export enum PlayerRole {
+    Guesser = 'guesser',
+    ClueGiver = 'cluegiver'
+}
+
 export enum SocketEvents {
     GameState = 'gameState',
     UpdateUser = 'updateUser',
@@ -18,7 +23,7 @@ export interface User {
     uid: string;
     name: string;
     team: Team;
-    secretKeeper: boolean;
+    role: PlayerRole;
     socket?:Socket
 }
 
