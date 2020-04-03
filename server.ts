@@ -40,7 +40,7 @@ class NameCodeServer {
         const clueGiverGS = {
             cards: this.gameState.cards,
             users: this.gameState.users.map(u => ({ ...u, socket: null })) }
-            this.io.to(PlayerRole.ClueGiver).emit(SocketEvents.GameState, clueGiverGS)
+        this.io.to(PlayerRole.ClueGiver).emit(SocketEvents.GameState, clueGiverGS);
     }
 
     socketConnect(socket: SocketIO.Socket) {
@@ -97,6 +97,9 @@ class NameCodeServer {
             socket.leaveAll();
             socket.join(user.role);
             this.updateUser(user);
+        } else {
+            console.log('user didnt validate')
+            console.log(user)
         }
     }
 

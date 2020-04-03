@@ -5,8 +5,8 @@
       "uid": {"type":"string"},
       "name": {"type":"string"},
       "team": {"type":"string"},
-      "secretKeeper": {"type":"boolean"}
+      "role": {"type":"string"}
     },
-      "required": ["name", "team", "secretKeeper"],
+      "required": ["uid", "name", "team", "role"],
     "additionalProperties": false
 }

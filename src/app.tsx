@@ -1,4 +1,4 @@
-import { User, Team, GameState, SocketEvents, Card } from './models';
+import { User, Team, GameState, SocketEvents, Card, PlayerRole } from './models';
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import io from "socket.io";
@@ -8,6 +8,7 @@ import { v4 as uuid } from 'uuid';
 interface AppState extends GameState {
     team: Team;
     name: string;
+    role: PlayerRole;
 }
 
 function groupByRows(cards: Card[], rows: number): Card[][] {
@@ -30,6 +31,7 @@ class App extends React.Component<{}, AppState> {
         this.state = {
             team: Team.BLUE,
             name: 'Anonymous',
+            role: PlayerRole.Guesser,
             users: [],
             cards: []
         };
@@ -45,7 +47,7 @@ class App extends React.Component<{}, AppState> {
             uid: this.uid,
             name: this.state.name,
             team: this.state.team,
-            secretKeeper: false
+            role: this.state.role,
         }
     }
 
@@ -71,6 +73,16 @@ class App extends React.Component<{}, AppState> {
         this.socket.emit(SocketEvents.ResetGame);
     }
 
+    onToggleRole(_: ClickEvent) {
+        const newRole = (this.state.role === PlayerRole.Guesser) ? PlayerRole.ClueGiver : PlayerRole.Guesser;
+        this.setState({role: newRole});
+        this.updateUser({...this.me, role: newRole});
+    }
+
+    onReveal(card: Card) {
+        this.socket.emit(SocketEvents.RevealCard, card)
+    }
+
     render() {
         return (
             <>
@@ -88,7 +100,9 @@ class App extends React.Component<{}, AppState> {
                             <Radio label="Team Red" value={Team.RED} />
                             <Radio label="Team Blue" value={Team.BLUE} />
                         </RadioGroup>
-
+                        <Button onClick={(e: ClickEvent) => this.onToggleRole(e)}>
+                            {this.state.role == PlayerRole.Guesser ? 'Change to Clue Giver':'Change to Guesser'}
+                        </Button>
                     </BPCard>
                     <BPCard>
                         <div>Red Team: </div>
@@ -114,7 +128,14 @@ class App extends React.Component<{}, AppState> {
                     {groupByRows([...this.state.cards], 5).map((row, i) => {
                         return (
                             <div className="hFlex" key={i}>
-                                {row.map(c => <BPCard className={'cardCard ' + c.type} key={c.uid}> {c.word}</BPCard>)}
+                                {row.map(c => 
+                                    <BPCard
+                                        className={'cardCard ' + c.type}
+                                        onClick={e => this.onReveal(c)}
+                                        key={c.uid}>
+                                        {c.word}
+                                    </BPCard>
+                                )}
                             </div>);
                     })}
                 </div>
