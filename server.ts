@@ -4,10 +4,17 @@ import fs from 'fs';
 import { v4 as uuid } from 'uuid';
 import { User, Card, CardType, GameState, SocketEvents, PlayerRole } from './src/models'
 import socketIO from 'socket.io';
-const randomWords = require('random-english-words');
 import _ from 'lodash';
+const csv = require('csv-parser')
 
-
+let wordlist: string[] = [];
+ 
+fs.createReadStream('wordlist.csv')
+    .pipe(csv({headers:false}))
+    .on('data', (data: object) => wordlist = _.uniq([...wordlist, ...Object.values(data)]))
+    .on('end', () => {
+        wordlist = wordlist.filter(r => r);
+    });
 var numCards: { [key: string]: number; } = {};
 numCards[CardType.ASSASIN] = 1;
 numCards[CardType.RED] = 8;
@@ -80,11 +87,12 @@ class NameCodeServer {
     resetGame(socket: SocketIO.Socket) {
         this.gameState.cards = []
         let types = _.shuffle(cardTypes)
+        let words = _.shuffle(wordlist)
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 5; col++) {
                 this.gameState.cards.push({
                     uid: uuid(),
-                    word: randomWords(),
+                    word: words.pop() || '',
                     type: types.pop() || CardType.UNKNOWN,
                     isRevealed: false,
                 });
