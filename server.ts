@@ -10,9 +10,9 @@ import _ from 'lodash';
 
 var numCards: { [key: string]: number; } = {};
 numCards[CardType.ASSASIN] = 1;
-numCards[CardType.RED] = 7;
-numCards[CardType.BLUE] = 8;
-numCards[CardType.BYSTANDER] = 8;
+numCards[CardType.RED] = 8;
+numCards[CardType.BLUE] = 9;
+numCards[CardType.BYSTANDER] = 7;
 
 const cardTypes: CardType[] = []
 for (let cardType of Object.keys(numCards)) {
