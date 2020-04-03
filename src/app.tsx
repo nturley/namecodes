@@ -105,18 +105,35 @@ class App extends React.Component<{}, AppState> {
                         </Button>
                     </BPCard>
                     <BPCard>
-                        <div>Red Team: </div>
+                        <div>Red Guessers: </div>
                         {
                             this.state.users
-                                .filter((u: User) => u.team === Team.RED)
+                                .filter((u: User) => u.team === Team.RED && u.role === PlayerRole.Guesser)
                                 .map((u: User, i) => <Tag className="nameTag" key={u.uid}> {u.name} </Tag>)
                         }
-                        <div>Blue Team:</div>
+                        <Divider />
+                        <div> Red Clue Giver: 
                         {
                             this.state.users
-                                .filter((u: User) => u.team === Team.BLUE)
+                                .filter((u: User) => u.team === Team.RED && u.role === PlayerRole.ClueGiver)
+                                .map((u: User, i) => <Tag className="nameTag" key={u.uid}> {u.name} </Tag>)
+                        }   
+                        </div>
+                        <Divider />
+                        <div>Blue Guessers:</div>
+                        {
+                            this.state.users
+                                .filter((u: User) => u.team === Team.BLUE && u.role === PlayerRole.Guesser)
                                 .map((u: User, i) => <Tag className="nameTag" key={u.uid}> {u.name} </Tag>)
                         }
+                        <Divider />
+                        <div> Blue Clue Giver:
+                        {
+                            this.state.users
+                                .filter((u: User) => u.team === Team.BLUE && u.role === PlayerRole.ClueGiver)
+                                .map((u: User, i) => <Tag className="nameTag" key={u.uid}> {u.name} </Tag>)
+                        }   
+                        </div>
                     </BPCard>
                     <BPCard>
                         <Button onClick={(e: ClickEvent) => this.onResetGame(e)}>
@@ -130,7 +147,7 @@ class App extends React.Component<{}, AppState> {
                             <div className="hFlex" key={i}>
                                 {row.map(c => 
                                     <BPCard
-                                        className={'cardCard ' + c.type}
+                                        className={`cardCard ${c.type} ${c.isRevealed?'revealed':'hidden'}`}
                                         onClick={e => this.onReveal(c)}
                                         key={c.uid}>
                                         {c.word}

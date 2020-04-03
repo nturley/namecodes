@@ -8,6 +8,19 @@ const randomWords = require('random-english-words');
 import _ from 'lodash';
 
 
+var numCards: { [key: string]: number; } = {};
+numCards[CardType.ASSASIN] = 1;
+numCards[CardType.RED] = 7;
+numCards[CardType.BLUE] = 8;
+numCards[CardType.BYSTANDER] = 8;
+
+const cardTypes: CardType[] = []
+for (let cardType of Object.keys(numCards)) {
+    for (let i=0; i<numCards[cardType]; i++) {
+        cardTypes.push(cardType as CardType);
+    }
+}
+
 const PORT = process.env.PORT || 5000;
 
 class NameCodeServer {
@@ -66,18 +79,13 @@ class NameCodeServer {
 
     resetGame(socket: SocketIO.Socket) {
         this.gameState.cards = []
-        const cardTypes = [
-            CardType.BYSTANDER,
-            CardType.ASSASIN,
-            CardType.RED,
-            CardType.BLUE
-        ]
+        let types = _.shuffle(cardTypes)
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 5; col++) {
                 this.gameState.cards.push({
                     uid: uuid(),
                     word: randomWords(),
-                    type: _.sample(cardTypes) || CardType.BYSTANDER,
+                    type: types.pop() || CardType.UNKNOWN,
                     isRevealed: false,
                 });
             }
