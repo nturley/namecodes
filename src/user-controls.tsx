@@ -59,7 +59,7 @@ export default class UserControls extends React.Component<Props, State> {
     }
 
     onResetGame(_: ClickEvent) {
-        this.props.socket.emit(SocketEvents.ResetGame);
+        this.props.socket.emit(SocketEvents.ResetCards);
     }
 
     onToggleRole(_: ClickEvent) {

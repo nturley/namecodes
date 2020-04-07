@@ -1,5 +1,4 @@
 import express from "express";
-import Ajv from 'ajv';
 import fs from 'fs';
 import { v4 as uuid } from 'uuid';
 import { User, Card, CardType, GameState, SocketEvents, PlayerRole } from './src/models'
@@ -32,7 +31,6 @@ const PORT = process.env.PORT || 5000;
 
 class NameCodeServer {
     app: express.Express;
-    validateUser: Ajv.ValidateFunction;
     io: SocketIO.Server;
     gameState: GameState = { users: [], cards: [], discussion: []};
 
@@ -47,47 +45,29 @@ class NameCodeServer {
         );
         this.io = socketIO(server);
         this.io.on(SocketEvents.Connection, socket => this.socketConnect(socket));
-
-        const ajv = new Ajv();
-        const schema = JSON.parse(fs.readFileSync('user.schema.json').toString());
-        this.validateUser = ajv.compile(schema);
     }
 
-    sendGameState() {
-        const guesserGS = {
-            ...this.gameState,
-            cards: this.gameState.cards.map(c => ({...c, type:(c.isRevealed?c.type:CardType.UNKNOWN)})),
-            users: this.gameState.users.map(u => ({ ...u, socket: null })) }
-        this.io.to(PlayerRole.Guesser).emit(SocketEvents.GameState, guesserGS)
-        const clueGiverGS = {
-            ...this.gameState,
-            cards: this.gameState.cards,
-            users: this.gameState.users.map(u => ({ ...u, socket: null })) }
-        this.io.to(PlayerRole.ClueGiver).emit(SocketEvents.GameState, clueGiverGS);
+    sendCards() {
+        const guesserCards = this.gameState.cards.map(c =>
+            ({...c, type:(c.isRevealed?c.type:CardType.UNKNOWN)}));
+        this.io.to(PlayerRole.Guesser).emit(SocketEvents.Cards, guesserCards);
+        this.io.to(PlayerRole.ClueGiver).emit(SocketEvents.Cards, this.gameState.cards);
     }
 
     socketConnect(socket: SocketIO.Socket) {
-        // send newcomer the starting gamestate
-        this.sendGameState()
-        // listen for user updates
         socket.on(SocketEvents.UpdateUser, user => this.onUser(socket, user));
-        // remove user on disconnect
         socket.on(SocketEvents.Disconnect, () => this.socketDisconnect(socket));
-        // reset game
-        socket.on(SocketEvents.ResetGame, () => this.resetGame(socket))
-        // reveal card
+        socket.on(SocketEvents.ResetCards, () => this.resetGame(socket))
         socket.on(SocketEvents.RevealCard, (card) => this.revealCard(socket, card));
-        // chat message
         socket.on(SocketEvents.ChatMessage, (msg) => this.chatMessage(socket, msg));
     }
 
     chatMessage(socket: SocketIO.Socket, message: string) {
-        // find user
         const foundUser = this.gameState.users.find(u => u.socket === socket);
         if (foundUser) {
             const authorName = foundUser.name;
             this.gameState.discussion.push({authorName, message});
-            this.sendGameState();
+            this.io.emit(SocketEvents.Discussion, this.gameState.discussion);
         }
     }
 
@@ -95,7 +75,7 @@ class NameCodeServer {
         const foundCard = this.gameState.cards.find(c => c.uid === card.uid);
         if (foundCard) {
             foundCard.isRevealed = true;
-            this.sendGameState()
+            this.sendCards()
         }
     }
 
@@ -113,25 +93,23 @@ class NameCodeServer {
                 });
             }
         }
-        this.sendGameState()
+        this.sendCards()
     }
 
     socketDisconnect(socket: SocketIO.Socket) {
         // delete users associated with this socket
         this.gameState.users = this.gameState.users.filter(u => u.socket != socket);
-        this.sendGameState()
+        this.sendUsers();
     }
 
     onUser(socket: SocketIO.Socket, user: User) {
-        if (this.validateUser(user)) {
-            user.socket = socket;
-            socket.leaveAll();
-            socket.join(user.role);
-            this.updateUser(user);
-        } else {
-            console.log('user didnt validate')
-            console.log(user)
-        }
+        user.socket = socket;
+        socket.leaveAll();
+        socket.join(user.role);
+        this.updateUser(user);
+        // send the initial discussion and cards
+        this.io.emit(SocketEvents.Discussion, this.gameState.discussion);
+        this.sendCards();
     }
 
     updateUser(user: User) {
@@ -141,7 +119,12 @@ class NameCodeServer {
         } else {
             this.gameState.users.push(user);
         }
-        this.sendGameState()
+        this.sendUsers();
+    }
+
+    sendUsers() {
+        const users = this.gameState.users.map(u => ({ ...u, socket: null }))
+        this.io.emit(SocketEvents.Users, users);
     }
 }
 const serve = new NameCodeServer()

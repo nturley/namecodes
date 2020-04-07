@@ -15,11 +15,11 @@ export default class UserList extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = { users: [] };
-        props.socket.on(SocketEvents.GameState, (gs:GameState) => this.onGameState(gs));
+        props.socket.on(SocketEvents.Users, (users:User[]) => this.onUsers(users));
     }
 
-    onGameState(gs: GameState) {
-        this.setState({ users: gs.users });
+    onUsers(users: User[]) {
+        this.setState({ users });
     }
 
     render() {

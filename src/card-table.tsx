@@ -21,11 +21,11 @@ export default class CardTable extends React.Component<Props, State> {
     constructor(props:Props) {
         super(props);
         this.state = {cards:[]};
-        props.socket.on(SocketEvents.GameState, (gs:GameState) => this.updateGameState(gs));
+        props.socket.on(SocketEvents.Cards, (cards:Card[]) => this.updateGameState(cards));
     }
     
-    updateGameState(gs: GameState) {
-        this.setState({cards:gs.cards});
+    updateGameState(cards: Card[]) {
+        this.setState({cards});
     }
     
     onReveal(card: Card) {

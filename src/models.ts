@@ -16,13 +16,20 @@ export enum PlayerRole {
 }
 
 export enum SocketEvents {
-    GameState = 'gameState',
-    UpdateUser = 'updateUser',
+    //socket status
     Connection = 'connection',
     Disconnect = 'disconnect',
-    ResetGame = 'reset',
+    
+    // client -> server
+    UpdateUser = 'updateUser',
+    ResetCards = 'reset',
     RevealCard = 'reveal',
-    ChatMessage = 'chat'
+    ChatMessage = 'chat',
+    
+    // server -> client
+    Discussion = 'discussion',
+    Cards = 'cards',
+    Users = 'users'
 }
 
 export interface User {
