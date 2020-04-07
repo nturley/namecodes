@@ -34,12 +34,13 @@ class NameCodeServer {
     app: express.Express;
     validateUser: Ajv.ValidateFunction;
     io: SocketIO.Server;
-    gameState: GameState = { users: [], cards: [] };
+    gameState: GameState = { users: [], cards: [], discussion: []};
 
     constructor() {
         this.app = express();
         this.app.use(express.json());
         this.app.use(express.static('dist'))
+        this.app.put('/heartbeat', (_,res) => {res.send('beat')});
         const server = this.app.listen(
             PORT,
             () => console.log(`Example app listening on port ${PORT}!`)
@@ -54,10 +55,12 @@ class NameCodeServer {
 
     sendGameState() {
         const guesserGS = {
+            ...this.gameState,
             cards: this.gameState.cards.map(c => ({...c, type:(c.isRevealed?c.type:CardType.UNKNOWN)})),
             users: this.gameState.users.map(u => ({ ...u, socket: null })) }
         this.io.to(PlayerRole.Guesser).emit(SocketEvents.GameState, guesserGS)
         const clueGiverGS = {
+            ...this.gameState,
             cards: this.gameState.cards,
             users: this.gameState.users.map(u => ({ ...u, socket: null })) }
         this.io.to(PlayerRole.ClueGiver).emit(SocketEvents.GameState, clueGiverGS);
@@ -74,6 +77,18 @@ class NameCodeServer {
         socket.on(SocketEvents.ResetGame, () => this.resetGame(socket))
         // reveal card
         socket.on(SocketEvents.RevealCard, (card) => this.revealCard(socket, card));
+        // chat message
+        socket.on(SocketEvents.ChatMessage, (msg) => this.chatMessage(socket, msg));
+    }
+
+    chatMessage(socket: SocketIO.Socket, message: string) {
+        // find user
+        const foundUser = this.gameState.users.find(u => u.socket === socket);
+        if (foundUser) {
+            const authorName = foundUser.name;
+            this.gameState.discussion.push({authorName, message});
+            this.sendGameState();
+        }
     }
 
     revealCard(socket: SocketIO.Socket, card: Card) {

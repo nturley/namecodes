@@ -1,5 +1,10 @@
 import {Socket} from 'socket.io'
 
+export interface DiscussionMessage {
+    message: string;
+    authorName: string;
+}
+
 export enum Team {
     RED = 'red',
     BLUE = 'blue'
@@ -17,6 +22,7 @@ export enum SocketEvents {
     Disconnect = 'disconnect',
     ResetGame = 'reset',
     RevealCard = 'reveal',
+    ChatMessage = 'chat'
 }
 
 export interface User {
@@ -45,4 +51,5 @@ export interface Card {
 export interface GameState {
     users: User[];
     cards: Card[];
+    discussion: DiscussionMessage[];
 }

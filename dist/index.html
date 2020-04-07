@@ -3,10 +3,6 @@
   <link href="https://unpkg.com/@blueprintjs/icons@^3.4.0/lib/css/blueprint-icons.css" rel="stylesheet" />
   <link href="https://unpkg.com/@blueprintjs/core@^3.10.0/lib/css/blueprint.css" rel="stylesheet" />
   <style>
-    input {
-      margin-left: 5px;
-    }
-
     .nameTag {
       margin: 2px;
     }
@@ -65,23 +61,23 @@
     .bystander.hidden {
       background-color: #fff;
     }
+    .discussion {
+      border-style: solid;
+      border-width: 1px;
+      border-color: #CCC;
+      background-color: #fff;
+      width: 200px;
+      height: 515px;
+      padding: 8px;
+      overflow: scroll;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
   </style>
-</head>
+</he.a.d>
 <div id="root"></div>
 <script src="https://www.gstatic.com/firebasejs/7.13.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/7.13.1/firebase-firestore.js"></script>
-<script>
-  var firebaseConfig = {
-    apiKey: "AIzaSyBLrdn4n4gn5MIVbF38LU5PZM7Xr3GEla8",
-    authDomain: "namecodes.firebaseapp.com",
-    databaseURL: "https://namecodes.firebaseio.com",
-    projectId: "namecodes",
-    storageBucket: "namecodes.appspot.com",
-    messagingSenderId: "954939455582",
-    appId: "1:954939455582:web:6641458026b6a62a851ccf"
-  };
-  firebase.initializeApp(firebaseConfig);
-</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js" crossorigin></script>
 <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
