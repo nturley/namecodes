@@ -73,10 +73,14 @@ class NameCodeServer {
 
     revealCard(socket: SocketIO.Socket, card: Card) {
         const foundCard = this.gameState.cards.find(c => c.uid === card.uid);
-        if (foundCard) {
-            foundCard.isRevealed = true;
-            this.sendCards()
-        }
+        if (!foundCard) return;
+        if (foundCard.isRevealed) return;
+        foundCard.isRevealed = true;
+        this.sendCards()
+        const foundUser = this.gameState.users.find(u => u.socket === socket);
+        if (!foundUser) return
+        this.gameState.discussion.push(`${foundUser.name} revealed ${foundCard.word} and it is ${foundCard.type}`);
+        this.io.emit(SocketEvents.Discussion, this.gameState.discussion);
     }
 
     resetGame(socket: SocketIO.Socket) {
@@ -94,6 +98,10 @@ class NameCodeServer {
             }
         }
         this.sendCards()
+        const foundUser = this.gameState.users.find(u => u.socket === socket);
+        if (!foundUser) return
+        this.gameState.discussion.push(`${foundUser.name} reset the cards`);
+        this.io.emit(SocketEvents.Discussion, this.gameState.discussion);
     }
 
     socketDisconnect(socket: SocketIO.Socket) {

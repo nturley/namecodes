@@ -1,6 +1,8 @@
 import {Socket} from 'socket.io'
 
-export interface DiscussionMessage {
+export type DiscussionMessage = string | ChatMessage
+
+export interface ChatMessage {
     message: string;
     authorName: string;
 }

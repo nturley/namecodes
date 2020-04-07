@@ -11,7 +11,7 @@ interface State {
 }
 
 interface Props {
-    socket: io.Server,
+    socket: io.Server
 }
 
 export default class Discussion extends React.Component<Props, State> {
@@ -46,6 +46,8 @@ export default class Discussion extends React.Component<Props, State> {
 
     formatDiscussion() {
         return this.state.discussion.map((d, i) => {
+            if (typeof d === 'string')
+                return <div key={i}><strong>{d}</strong></div>; 
             return <div key={i}><strong>{d.authorName}:</strong> {d.message}</div>;
         })
     }
