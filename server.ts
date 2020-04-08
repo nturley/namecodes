@@ -27,6 +27,7 @@ for (let cardType of Object.keys(numCards)) {
     }
 }
 
+let unusedWords: string[] = []
 const PORT = process.env.PORT || 5000;
 
 class NameCodeServer {
@@ -86,12 +87,13 @@ class NameCodeServer {
     resetGame(socket: SocketIO.Socket) {
         this.gameState.cards = []
         let types = _.shuffle(cardTypes)
-        let words = _.shuffle(wordlist)
+        if (unusedWords.length < 25)
+            unusedWords = _.shuffle(wordlist)
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 5; col++) {
                 this.gameState.cards.push({
                     uid: uuid(),
-                    word: words.pop() || '',
+                    word: unusedWords.pop() || '',
                     type: types.pop() || CardType.UNKNOWN,
                     isRevealed: false,
                 });
