@@ -6,14 +6,21 @@ import UserControls from './user-controls';
 import UserList from './user-list';
 import CardTable from './card-table';
 import GameControls from "./game-controls";
+import { PlayerRole, User } from "./models";
 
-class App extends React.Component<{}, {}> {
+
+class App extends React.Component<{}, {role:PlayerRole}> {
     socket: io.Server;
 
     constructor(props: {}) {
         super(props);
         setTimeout(this.heartBeat, 1000 * 60 * 5)
         this.socket = io();
+        this.state ={role: PlayerRole.Guesser};
+    }
+
+    onUserChanged(user:User){
+        this.setState({role:user.role});
     }
 
     heartBeat() {
@@ -25,8 +32,8 @@ class App extends React.Component<{}, {}> {
             <div className="hFlex">
                 <div>
                     <div className="hFlex">
-                        <UserControls socket={this.socket} />
-                        <GameControls socket={this.socket} />
+                        <UserControls socket={this.socket} onUserChange={user => this.onUserChanged(user)}/>
+                        <GameControls socket={this.socket} role={this.state.role}/>
                         <UserList socket={this.socket} />
                     </div>
                     <CardTable socket={this.socket} />

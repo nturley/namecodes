@@ -1,32 +1,31 @@
-import { Team, SocketEvents } from './models';
+import { Team, SocketEvents, PlayerRole } from './models';
 import * as React from "react";
 import io from 'socket.io';
-import { v4 as uuid } from 'uuid';
-import { Button, Radio, RadioGroup, Divider, Card as BPCard } from "@blueprintjs/core";
+import { Button, ButtonGroup, Radio, RadioGroup, Divider, Card as BPCard } from "@blueprintjs/core";
 
 type ClickEvent = React.MouseEvent<Element, MouseEvent>;
 
 interface State {
     turn: Team,
+    clue: string,
 }
 
 interface Props {
-    socket: io.Server;
+    socket: io.Server,
+    role: PlayerRole,
 }
 
 export default class GameControls extends React.Component<Props, State> {
-    uid: string;
     constructor(props: Props) {
         super(props);
         this.state = {
-            turn: Team.BLUE
+            turn: Team.BLUE,
+            clue: '',
         }
-        this.uid = uuid();
         this.props.socket.on(SocketEvents.Turn, (turn: Team) => this.onTurn(turn));
     }
 
     onTurn(turn: Team) {
-        console.log('received turn')
         this.setState({turn});
     }
 
@@ -36,9 +35,33 @@ export default class GameControls extends React.Component<Props, State> {
         this.props.socket.emit(SocketEvents.SetTurn, turn);
     }
 
-
     onResetGame(_: ClickEvent) {
         this.props.socket.emit(SocketEvents.ResetCards);
+    }
+
+    onClueChange(e: React.ChangeEvent<HTMLInputElement>) {
+        this.setState({clue:e.target.value});
+    }
+
+    onSetClue(e: ClickEvent) {
+        this.props.socket.emit(SocketEvents.SetClue, this.state.clue);
+    }
+
+    renderSetClue() {
+        if (this.props.role == PlayerRole.ClueGiver) {
+            return (
+                <>
+                <Divider/>
+                <ButtonGroup>
+                    <input className="clueField" type="text" onChange={e => this.onClueChange(e)} value={this.state.clue} />
+                    <Button onClick={(e: ClickEvent) => this.onSetClue(e)} >
+                        Set Clue
+                    </Button>
+                </ButtonGroup>
+                </>
+            );
+        }
+        return <></>;
     }
 
     render() {
@@ -52,6 +75,7 @@ export default class GameControls extends React.Component<Props, State> {
                     <Radio label="Red's Turn" value={Team.RED}></Radio>
                     <Radio label="Blue's Turn" value={Team.BLUE}></Radio>
                 </RadioGroup>
+                {this.renderSetClue()}
             </BPCard>
         );
     }

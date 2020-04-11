@@ -12,16 +12,26 @@ function groupByRows(cards: Card[], rows: number): Card[][] {
 interface Props { 
     socket:io.Server
 }
+
 interface State { 
-    cards: Card[]
+    cards: Card[],
+    clue: string,
+
 }
 
 export default class CardTable extends React.Component<Props, State> {
 
     constructor(props:Props) {
         super(props);
-        this.state = {cards:[]};
+        this.state = {
+            cards:[],
+            clue:''};
         props.socket.on(SocketEvents.Cards, (cards:Card[]) => this.updateGameState(cards));
+        props.socket.on(SocketEvents.Clue, (clue:string) => this.updateClue(clue));
+    }
+
+    updateClue(clue: string) {
+        this.setState({clue});
     }
     
     updateGameState(cards: Card[]) {
@@ -35,6 +45,9 @@ export default class CardTable extends React.Component<Props, State> {
     render() {
         return (
             <div id="table">
+                <div className="hFlex">
+                    <h2>{this.state.clue}</h2>
+                </div>
                 {groupByRows([...this.state.cards], 5).map((row, i) => {
                     return (
                         <div className="hFlex" key={i}>

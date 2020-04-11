@@ -15,6 +15,7 @@ interface State {
 
 interface Props {
     socket: io.Server;
+    onUserChange?: (user: User)=>void;
 }
 
 export default class UserControls extends React.Component<Props, State> {
@@ -41,6 +42,9 @@ export default class UserControls extends React.Component<Props, State> {
     updateUser(update?: User) {
         let user: User = update ? update : this.me
         this.props.socket.emit(SocketEvents.UpdateUser, user);
+        if (this.props.onUserChange) {
+            this.props.onUserChange(user);
+        }
     }
 
     onUpdateNameClick(_: ClickEvent) {
