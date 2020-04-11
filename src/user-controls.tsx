@@ -1,8 +1,8 @@
-import { User, Team, GameState, SocketEvents, Card, PlayerRole } from './models';
+import { User, Team, SocketEvents, PlayerRole } from './models';
 import * as React from "react";
 import io from 'socket.io';
 import { v4 as uuid } from 'uuid';
-import { Button, ButtonGroup, Radio, RadioGroup, Divider, Tag, Card as BPCard } from "@blueprintjs/core";
+import { Button, ButtonGroup, Radio, RadioGroup, Divider, Card as BPCard } from "@blueprintjs/core";
 
 type ClickEvent = React.MouseEvent<Element, MouseEvent>;
 
@@ -10,7 +10,7 @@ interface State {
     team: Team;
     name: string;
     role: PlayerRole;
-    users: User[];
+    
 }
 
 interface Props {
@@ -25,7 +25,6 @@ export default class UserControls extends React.Component<Props, State> {
             team: Team.BLUE,
             name: 'Anonymous',
             role: PlayerRole.Guesser,
-            users: []
         }
         this.uid = uuid();
         props.socket.emit(SocketEvents.UpdateUser, this.me);
@@ -58,10 +57,6 @@ export default class UserControls extends React.Component<Props, State> {
         this.updateUser({ ...this.me, team })
     }
 
-    onResetGame(_: ClickEvent) {
-        this.props.socket.emit(SocketEvents.ResetCards);
-    }
-
     onToggleRole(_: ClickEvent) {
         const newRole = (this.state.role === PlayerRole.Guesser) ? PlayerRole.ClueGiver : PlayerRole.Guesser;
         this.setState({ role: newRole });
@@ -69,31 +64,24 @@ export default class UserControls extends React.Component<Props, State> {
     }
 
     render() {
-        return (
-            <>            
-                <BPCard id="userInfo">
-                    <label>Name</label><br />
-                    <ButtonGroup>
-                        <input className="nameField" type="text" onChange={e => this.onNameChange(e)} value={this.state.name} />
-                        <Button onClick={(e: ClickEvent) => this.onUpdateNameClick(e)}>
-                            Set Name
-                            </Button>
-                    </ButtonGroup>
-                    <Divider />
-                    <RadioGroup onChange={e => this.onTeamChange(e)} selectedValue={this.state.team}>
-                        <Radio label="Team Red" value={Team.RED} />
-                        <Radio label="Team Blue" value={Team.BLUE} />
-                    </RadioGroup>
-                    <Button onClick={(e: ClickEvent) => this.onToggleRole(e)}>
-                        {this.state.role == PlayerRole.Guesser ? 'Change to Clue Giver' : 'Change to Guesser'}
-                    </Button>
-                </BPCard>
-                <BPCard>
-                    <Button onClick={(e: ClickEvent) => this.onResetGame(e)}>
-                        Reset Game
-                    </Button>
-                </BPCard>
-            </>
+        return (        
+            <BPCard id="userInfo">
+                <label>Name</label><br />
+                <ButtonGroup>
+                    <input className="nameField" type="text" onChange={e => this.onNameChange(e)} value={this.state.name} />
+                    <Button onClick={(e: ClickEvent) => this.onUpdateNameClick(e)}>
+                        Set Name
+                        </Button>
+                </ButtonGroup>
+                <Divider />
+                <RadioGroup onChange={e => this.onTeamChange(e)} selectedValue={this.state.team}>
+                    <Radio label="Team Red" value={Team.RED} />
+                    <Radio label="Team Blue" value={Team.BLUE} />
+                </RadioGroup>
+                <Button onClick={(e: ClickEvent) => this.onToggleRole(e)}>
+                    {this.state.role == PlayerRole.Guesser ? 'Change to Clue Giver' : 'Change to Guesser'}
+                </Button>
+            </BPCard>
         );
     }
 }

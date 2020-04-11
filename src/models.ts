@@ -27,11 +27,15 @@ export enum SocketEvents {
     ResetCards = 'reset',
     RevealCard = 'reveal',
     ChatMessage = 'chat',
+    SetClue = 'setClue',
+    SetTurn = 'setTurn',
     
     // server -> client
     Discussion = 'discussion',
     Cards = 'cards',
-    Users = 'users'
+    Users = 'users',
+    Clue = 'clue',
+    Turn = 'turn',
 }
 
 export interface User {
@@ -61,4 +65,6 @@ export interface GameState {
     users: User[];
     cards: Card[];
     discussion: DiscussionMessage[];
+    turn: Team;
+    currentClue: string;
 }

@@ -1,7 +1,7 @@
 import express from "express";
 import fs from 'fs';
 import { v4 as uuid } from 'uuid';
-import { User, Card, CardType, GameState, SocketEvents, PlayerRole } from './src/models'
+import { User, Card, CardType, GameState, SocketEvents, PlayerRole, Team } from './src/models'
 import socketIO from 'socket.io';
 import _ from 'lodash';
 const csv = require('csv-parser')
@@ -33,7 +33,13 @@ const PORT = process.env.PORT || 5000;
 class NameCodeServer {
     app: express.Express;
     io: SocketIO.Server;
-    gameState: GameState = { users: [], cards: [], discussion: []};
+    gameState: GameState = {
+        users: [],
+        cards: [],
+        discussion: [],
+        turn: Team.BLUE,
+        currentClue: '',
+    };
 
     constructor() {
         this.app = express();
@@ -61,6 +67,25 @@ class NameCodeServer {
         socket.on(SocketEvents.ResetCards, () => this.resetGame(socket))
         socket.on(SocketEvents.RevealCard, (card) => this.revealCard(socket, card));
         socket.on(SocketEvents.ChatMessage, (msg) => this.chatMessage(socket, msg));
+        socket.on(SocketEvents.SetTurn, (turn) => this.setTurn(socket, turn));
+        socket.on(SocketEvents.SetClue, (clue) => this.setClue(socket, clue));
+    }
+
+    setTurn(socket: SocketIO.Socket, turn: Team) {
+        if (turn != this.gameState.turn){
+            this.gameState.turn = turn;
+            this.io.emit(SocketEvents.Turn, turn);
+        }
+    }
+
+    setClue(socket: SocketIO.Socket, clue: string) {
+        const foundUser = this.gameState.users.find(u => u.socket === socket);
+        if (!foundUser) return;
+        if (foundUser.role != PlayerRole.ClueGiver) return;
+        if (foundUser.team != this.gameState.turn) return;
+        this.gameState.currentClue = clue;
+        this.gameState.discussion.push(`${foundUser.name} set the clue to ${clue}`);
+        this.io.emit(SocketEvents.Discussion, this.gameState.discussion);    
     }
 
     chatMessage(socket: SocketIO.Socket, message: string) {
@@ -76,15 +101,19 @@ class NameCodeServer {
         const foundCard = this.gameState.cards.find(c => c.uid === card.uid);
         if (!foundCard) return;
         if (foundCard.isRevealed) return;
-        foundCard.isRevealed = true;
-        this.sendCards()
         const foundUser = this.gameState.users.find(u => u.socket === socket);
         if (!foundUser) return
+        if (foundUser.team != this.gameState.turn) return;
+        if (foundUser.role != PlayerRole.Guesser) return;
+        foundCard.isRevealed = true;
+        this.sendCards()
         this.gameState.discussion.push(`${foundUser.name} revealed ${foundCard.word} and it is ${foundCard.type}`);
         this.io.emit(SocketEvents.Discussion, this.gameState.discussion);
     }
 
     resetGame(socket: SocketIO.Socket) {
+        this.gameState.turn = Team.BLUE;
+        this.gameState.currentClue = '';
         this.gameState.cards = []
         let types = _.shuffle(cardTypes)
         if (unusedWords.length < 25)
@@ -117,9 +146,12 @@ class NameCodeServer {
         socket.leaveAll();
         socket.join(user.role);
         this.updateUser(user);
-        // send the initial discussion and cards
+        // send the initial discussion, cards, turn, and clue
         this.io.emit(SocketEvents.Discussion, this.gameState.discussion);
         this.sendCards();
+        this.io.emit(SocketEvents.Turn, this.gameState.turn);
+        this.io.emit(SocketEvents.Clue, this.gameState.currentClue);
+        
     }
 
     updateUser(user: User) {

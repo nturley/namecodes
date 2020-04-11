@@ -5,6 +5,7 @@ import Discussion from './discussion';
 import UserControls from './user-controls';
 import UserList from './user-list';
 import CardTable from './card-table';
+import GameControls from "./game-controls";
 
 class App extends React.Component<{}, {}> {
     socket: io.Server;
@@ -25,6 +26,7 @@ class App extends React.Component<{}, {}> {
                 <div>
                     <div className="hFlex">
                         <UserControls socket={this.socket} />
+                        <GameControls socket={this.socket} />
                         <UserList socket={this.socket} />
                     </div>
                     <CardTable socket={this.socket} />
