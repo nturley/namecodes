@@ -24,7 +24,7 @@ class App extends React.Component<{}, {role:PlayerRole}> {
     }
 
     heartBeat() {
-        fetch('/hearbeat', { method: 'PUT' });
+        fetch('/heartbeat', { method: 'PUT' });
     }
 
     render() {
