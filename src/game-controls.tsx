@@ -22,7 +22,7 @@ export default class GameControls extends React.Component<Props, State> {
             turn: Team.BLUE
         }
         this.uid = uuid();
-        this.props.socket.on(SocketEvents.Turn, (turn: Team) => {});
+        this.props.socket.on(SocketEvents.Turn, (turn: Team) => this.onTurn(turn));
     }
 
     onTurn(turn: Team) {
