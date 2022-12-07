@@ -33,7 +33,7 @@
     "@types/uuid": "^7.0.2",
     "ajv": "^6.12.0",
     "csv-parser": "^2.3.2",
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "js-cookie": "^2.2.1",
     "lodash": "^4.17.19",
     "random-english-words": "^0.1.0",
